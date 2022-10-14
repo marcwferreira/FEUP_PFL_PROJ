@@ -1,30 +1,129 @@
 import Data.List
 import Data.Char
 
-main = do  
-    putStrLn "What is the desired funcion?" 
-    putStrLn "A - normalize polynomial"
-    putStrLn "B - add polynomials"
-    putStrLn "C - multiply polynomials"
-    putStrLn "D - derivative of polynomial"
-    name <- getLine 
-    putStrLn ("Hello " ++ name)
+data Expo = Expo {var :: String , exponent :: Float} deriving (Show)
+data Term = Term { signal :: Char, numeric :: Float, expos :: [Expo]} deriving (Show)
+type Poli = [Term]
 
+-- AUX FUNCTIONS
+
+-- remove char from string
+removeOccurencesList:: Eq a => a -> [a] -> [a]
+removeOccurencesList rcvItem rcvList = filter (/= rcvItem) rcvList
+
+-- Checks is char recevied is a signal
+isSignal:: Char -> Bool
+isSignal rcvChar = rcvChar == '+' || rcvChar == '-'
+
+-- Checks if char reveived is not a signal
+notSignal:: Char -> Bool
+notSignal rcvItem = not (isSignal rcvItem)
+
+-- safe init
+safeInit:: [a] -> [a]
+safeInit [] = []
+safeInit rcvList = init rcvList
+
+-- Remove parenthesis surrouding number to facilitate other functions
+surroudingParethesis:: String -> String
+surroudingParethesis [] = []
+surroudingParethesis rcvString = if (last rcvString) == ')'
+                                    then  safeInit (dropWhileList isEqual rcvString "(")
+                                    else dropWhileList isEqual rcvString "("
+
+-- takes substring from string with characters that are accepted to be transformed into a float
+takeWhileCharsFloat:: String -> String
+takeWhileCharsFloat [] = []
+takeWhileCharsFloat charString = takeWhile (\a-> (isDigit a) || a == '.' || a == '(' || a == ')') charString
+
+-- check is a string received can be transformed into a float
+checkFloatString:: String -> Bool
+checkFloatString floatString = ((foldr (\x sum -> if x == '.' then sum+1 else sum) 0 fixedString) <= 1) -- can only have a max of one '.'
+                                && ((foldr (\x sum -> if x == '(' || x == ')' then sum+1 else sum) 0 fixedString) == 0) -- check for parenthesis inside number
+                                && (takeWhileCharsFloat (tail fixedString) == (tail fixedString)) -- can only have digits and '.', we don't check the first one since it is checked bellow
+                                && (isDigit (last fixedString)) -- last element needs to be a number
+                                && ((isDigit (head fixedString)) || ((isSignal (head fixedString)) && (isDigit ((!!) fixedString 1)))) -- first elements need to be a number or signal and number
+                                where fixedString = surroudingParethesis floatString
+
+-- Transform a string in a float
+getFloatFromString:: String -> Float 
+getFloatFromString [] = 1
+getFloatFromString formString = if (checkFloatString formString) --check if string can be transformed into float
+                                then read formString :: Float
+                                else error "invalid number in polinomyal" -- throw an arrow if it can't be transformed
+
+-- Divides a string using + or - with these symbols at the beginning of the next one
+stringDivider:: String -> [String]
+stringDivider [] = []
+stringDivider rcvString = ([head rcvString]++(takeWhile (\a -> (a/= '+' && a /= '-')) (tail rcvString))) : stringDivider (dropWhile (\a -> (a/= '+' && a /= '-')) (tail rcvString))
+
+-- Checks if two itens are equal
+isEqual:: Eq a => a -> a -> Bool
+isEqual iten1 iten2 = iten1 == iten2
+
+-- drop while lists are equal
+dropWhileList:: (a -> a -> Bool) -> [a] -> [a] -> [a]
+dropWhileList _ [] [] = []
+dropWhileList _ list1 [] = list1
+dropWhileList _ [] list2 = []
+dropWhileList cond list1 list2 = if cond (head list1) (head list2) 
+                                    then [] ++ dropWhileList cond (tail list1) (tail list2)
+                                    else list1
+
+-- Check last subString part to see if next signal is a divide or not
+verifyDivision:: String -> Bool
+verifyDivision [] = True
+verifyDivision rcvString = not (last rcvString == '(' || last rcvString == '^')
+
+-- collects all substring until when it should actually be broken
+takeUntilSignal:: String -> String
+takeUntilSignal [] = []
+takeUntilSignal rcvString = if verifyDivision (takeWhile notSignal (tail rcvString))
+                            then firstSubString
+                            else firstSubString ++ takeUntilSignal (dropWhileList isEqual rcvString firstSubString)
+                            where 
+                                firstSubString = [head rcvString]++(takeWhile notSignal (tail rcvString))
+
+-- divide string into substring with the terms of the polynomial
+smartStringDivider:: String -> [String]
+smartStringDivider [] = []
+smartStringDivider rcvString = firstString : smartStringDivider (dropWhileList isEqual rcvString firstString) where firstString = takeUntilSignal rcvString 
+
+-- Splits a list using a as the divider
 split:: Eq a => a -> [a] -> [[a]]
 split _ [] = []
 split delimiter rcvString = takeWhile (\a -> a /= delimiter) rcvString : split delimiter (dropWhile (\b -> b == delimiter) (dropWhile (\b -> b /= delimiter) rcvString))
 
---Parser the string into different components
-parserPolynomial:: String -> [String]
-parserPolynomial [] = []
-parserPolynomial rcvString = ([head rcvString]++(takeWhile (\a -> (a/= '+' && a /= '-')) (tail rcvString))) : parserPolynomial (dropWhile (\a -> (a/= '+' && a /= '-')) (tail rcvString))
+-- PARSER
 
--- Divide the terms of the polynomial into lists
-termDivision:: String -> [String]
-termDivision termString = if ( (head termString == '+') || (head termString == '-') )
-                            then [head termString] : (takeWhile (\a -> (isDigit a || a == '.')) (dropWhile (\a -> not(isDigit a)) termString)) --take signal at front of string and take digits of term
-                                : takeWhile (isLetter) (dropWhile (\a -> not(isLetter a) ) termString) -- take name of variable in the term
-                                : [takeWhile (\a -> a /= ')') (dropWhile (\a -> not(isDigit a || a == '-')) (dropWhile (\a -> not(isLetter a)) termString))] -- take the exponent of the term
-                            else ['+'] : (takeWhile (\a -> (isDigit a || a == '.')) (dropWhile (\a -> not(isDigit a)) termString)) --take signal at front of string and take digits of term
-                                : takeWhile (isLetter) (dropWhile (\a -> not( isLetter a)) termString)
-                                : [takeWhile (\a -> a /= ')') (dropWhile (\a -> not(isDigit a || a == '-')) (dropWhile (\a -> not(isLetter a)) termString))] -- take the exponent of the term
+-- Creates the pair variable and exponent for each of the variables (individually)
+expoCreation:: String -> Expo
+expoCreation expoString = Expo (takeWhile (isLetter) (dropWhile (\a-> not (isLetter a)) expoString)) (getFloatFromString (drop 1 (dropWhile (\a-> a /= '^') expoString)))
+
+-- Creates each term of the polynomial
+termCreation:: String -> Term
+termCreation [] = error "Term can not be empty"
+termCreation termString = if isSignal (head termString)
+                            then Term (head termString) (getFloatFromString (takeWhileCharsFloat (tail termString))) (map (expoCreation) (split '*' (dropWhile (\a-> not(isLetter a)) termString)))
+                            else Term '+' (getFloatFromString (takeWhileCharsFloat termString)) (map (expoCreation) (split '*' (dropWhile (\a-> not(isLetter a)) termString)))
+
+-- Creates the polynomial
+poliCreation:: String -> [Term]
+poliCreation stringList = map (termCreation) (smartStringDivider  (removeOccurencesList ' ' stringList))
+
+-- PARSER END
+
+
+{-
+-- divide string into substring with the terms of the polynomial
+smartStringDivider:: String -> [String]
+smartStringDivider [] = []
+smartStringDivider rcvString = if verifyDivision (takeWhile notSignal (tail rcvString)) --use tail because first char might be a signal
+                                then firstSubString : smartStringDivider (dropWhileList isEqual rcvString firstSubString)
+                                else (firstSubString ++ [head remainderString] ++ (takeWhileCharsFloat (tail remainderString))) -- forgot divide with * fix this!!!!!!
+                                    : smartStringDivider (dropWhileList isEqual rcvString (firstSubString ++ secondSubString))
+                                where   
+                                    firstSubString = ([head rcvString]++(takeWhile notSignal (tail rcvString)))
+                                    remainderString = (dropWhileList isEqual rcvString firstSubString)
+                                    secondSubString = (head remainderString) : (takeWhileCharsFloat (tail remainderString))
+-}
