@@ -13,7 +13,8 @@ type Poli = [Term]
 removeOccurencesList:: Eq a => a -> [a] -> [a]
 removeOccurencesList rcvItem rcvList = filter (/= rcvItem) rcvList
 
--- Checks is char recevied is a signal
+
+-- Checks is char recevied is a signal (+ or -)
 isSignal:: Char -> Bool
 isSignal rcvChar = rcvChar == '+' || rcvChar == '-'
 
@@ -46,7 +47,7 @@ checkFloatString floatString = ((foldr (\x sum -> if x == '.' then sum+1 else su
                                 && (isDigit (last fixedString)) -- last element needs to be a number
                                 && ((isDigit (head fixedString)) || ((isSignal (head fixedString)) && (isDigit ((!!) fixedString 1)))) -- first elements need to be a number or signal and number
                                 where fixedString = surroudingParethesis floatString
-
+                                
 -- Transform a string in a float
 getFloatFromString:: String -> Float 
 getFloatFromString [] = 1
@@ -54,7 +55,7 @@ getFloatFromString formString = if (checkFloatString formString) --check if stri
                                 then read formString :: Float
                                 else error "invalid number in polinomyal" -- throw an arrow if it can't be transformed
 
--- Divides a string using + or - with these symbols at the beginning of the next one
+-- Divides a string using + or - with these symbols at the beginning of the next one (not being used)
 stringDivider:: String -> [String]
 stringDivider [] = []
 stringDivider rcvString = ([head rcvString]++(takeWhile (\a -> (a/= '+' && a /= '-')) (tail rcvString))) : stringDivider (dropWhile (\a -> (a/= '+' && a /= '-')) (tail rcvString))
@@ -109,6 +110,8 @@ termCreation termString = if isSignal (head termString)
                             then Term (head termString) (getFloatFromString (takeWhileCharsFloat (tail termString))) (map (expoCreation) (split '*' (dropWhile (\a-> not(isLetter a)) termString)))
                             else Term '+' (getFloatFromString (takeWhileCharsFloat termString)) (map (expoCreation) (split '*' (dropWhile (\a-> not(isLetter a)) termString)))
 
+-- 4*x^2*y^2 + 2*(x*y)^2 + 2 new edge case
+
 -- Creates the polynomial
 poliCreation:: String -> [Term]
 poliCreation stringList = map (termCreation) (smartStringDivider  (removeOccurencesList ' ' stringList))
@@ -129,21 +132,50 @@ expoGreaterVar expo1 expo2 = if (var expo1) >= (var expo2) then GT else LT
 compareExpoNum:: Expo -> Expo -> Bool 
 compareExpoNum expo1 expo2 = (expoNum expo1) == (expoNum expo2)
 
+-- calculate the float using the signal and the numeric from a term
+calculateFloatTerm:: Term -> Float
+calculateFloatTerm term1 = if (signal term1) == '+'
+                            then numeric term1
+                            else -1 *(numeric term1)
+
+-- function to sum terms if equals
+sumTerms:: Term -> Term -> Term
+sumTerms term1 term2 = if (expos term1) == (expos term2)
+                        then Term '+' (calculateFloatTerm term1 + calculateFloatTerm term2) (expos term1)
+                        else error "Can not sum terms with differents exponentials"
+
+-- function to sum expos if equal
+sumExpos:: Expo -> Expo -> Expo
+sumExpos expo1 expo2 = if (var expo1) == (var expo2)
+                        then Expo (var expo1) ((expoNum expo1)+(expoNum expo2))
+                        else error "Can not sum expos with different variables"
 
 -- NEXT FUNCTIONS
 
 -- function to order expos first by exponent then by letter
 sortExpos:: [Expo] -> [Expo]
-sortExpos rcvList =  (head sortedByExpo) : sortBy (expoGreaterVar) (takeWhile (\a-> compareExpoNum (head sortedByExpo) a) (tail sortedByExpo))
+sortExpos rcvList =  sortBy (expoGreaterVar) greatesExpoList ++ sortExpos (dropWhileList isEqual sortedByExpo greatesExpoList)
                         where sortedByExpo = sortBy (expoGreaterNum) rcvList
+                              greatesExpoList = takeWhile (\a-> compareExpoNum (head sortedByExpo) a) sortedByExpo
 
 -- function to see if expos are equal (after ordering)
 
--- function so sum expos if equal
+-- function to sum all expos if they are equal
+sumListExpos:: [Expo] -> [Expo]
+sumListExpos [] = []
+sumListExpos expoList = foldr (sumExpos) firstExpo [ x | x <- (tail expoList), (var firstExpo) == (var x)]
+                        : sumListExpos [ x | x <- expoList, (var firstExpo) /= (var x)]
+                        where firstExpo = head expoList
+
+
+-- function to sum all equal terms from polynomial
+sumListTerms:: [Term] -> [Term]
+sumListTerms [] = []
+sumListTerms termList = foldr (sumTerms) firstTerm [ x | x <- (tail termList), (expos firstTerm) == (expos x)]
+                        : sumListTerms [ x | x <- termList, (expos firstTerm) /= (expos x)]
+                        where firstTerm = head termList
 
 -- function to order terms
-
--- function to sum terms if equals
 
 -- function to multiply numeric by expoNum then take 1 from expoNum
 
