@@ -158,6 +158,11 @@ sumExpos expo1 expo2 = if (var expo1) == (var expo2)
                         then Expo (var expo1) ((expoNum expo1)+(expoNum expo2))
                         else error "Can not sum expos with different variables"
 
+-- function to remove expos with expoNum = 0
+removeZeroExpos:: [Expo] -> [Expo]
+removeZeroExpos [] = []
+removeZeroExpos expoList = [x | x <- expoList, (expoNum x) /= 0]
+
 -- NEXT FUNCTIONS
 
 -- function to order expos first by exponent then by letter
@@ -190,13 +195,17 @@ sortTerms rcvList = sortBy (termGreaterVar) greaterTermList ++ sortTerms (dropWh
                               greaterTermList = takeWhile (\a-> compareExpoNum (head (expos  (head sortedByTerm))) ( head (expos a))) sortedByTerm
 
 -- function to multiply numeric by expoNum then take 1 from expoNum
+deriveTerm:: String ->Term -> Term
+deriveTerm deriveVar term1 = if newNumeric >= 0
+                                then Term '+'  newNumeric (Expo (var deriveExpo) ((expoNum deriveExpo)-1) : [x | x <- (expos term1) , (var x) /= deriveVar])
+                                else Term '-'  (-1*newNumeric) (Expo (var deriveExpo) ((expoNum deriveExpo)-1) : [x | x <- (expos term1) , (var x) /= deriveVar])
+                                where deriveExpo = (head (dropWhile (\a-> (var a) /= deriveVar) (expos term1)))
+                                      newNumeric = (numeric term1) * (expoNum deriveExpo)
 
 -- function to multiply terms (multiply all with all)
     -- implies functions to sum expos (their exponent)
 
 -- function to print term
-
--- function to see if expos are equal (after ordering) (might not be necessary)
 
 -- EXTRA WORK
 
@@ -204,23 +213,7 @@ sortTerms rcvList = sortBy (termGreaterVar) greaterTermList ++ sortTerms (dropWh
     -- ORDER {polynomial}
     -- ADD {polynomial} {polynomial}
     -- MULTIPLY {polylonimal} {polynomial}
-    -- DERIVE {polynomial}
--- OBS: {polynomial} can be another function like : ADD {MULTIPLY {polynomial} {polynomial}} {DERIVE {ORDER {POLYNOMIAL}}}
+    -- DERIVE {variable} {polynomial}
+-- OBS: {polynomial} can be another function like : ADD {MULTIPLY {polynomial} {polynomial}} {DERIVE {x} {ORDER {POLYNOMIAL}}}
 
 -- EXTRA WORK END
-
-
---backup in case I screwed something up (this has a bug)
-{-
--- divide string into substring with the terms of the polynomial
-smartStringDivider:: String -> [String]
-smartStringDivider [] = []
-smartStringDivider rcvString = if verifyDivision (takeWhile notSignal (tail rcvString)) --use tail because first char might be a signal
-                                then firstSubString : smartStringDivider (dropWhileList isEqual rcvString firstSubString)
-                                else (firstSubString ++ [head remainderString] ++ (takeWhileCharsFloat (tail remainderString))) -- forgot divide with * fix this!!!!!!
-                                    : smartStringDivider (dropWhileList isEqual rcvString (firstSubString ++ secondSubString))
-                                where   
-                                    firstSubString = ([head rcvString]++(takeWhile notSignal (tail rcvString)))
-                                    remainderString = (dropWhileList isEqual rcvString firstSubString)
-                                    secondSubString = (head remainderString) : (takeWhileCharsFloat (tail remainderString))
--}
