@@ -120,15 +120,23 @@ poliCreation stringList = map (termCreation) (smartStringDivider  (removeOccuren
 
 -- AUX FUNCTIONS
 
--- function that compares the exponent of an "expo" to be used in a sort function
+-- function that compares the exponent of an "expo" to be used in sorting expos
 expoGreaterNum:: Expo -> Expo -> Ordering
 expoGreaterNum expo1 expo2 = if (expoNum expo1) >= (expoNum expo2) then LT else GT
 
--- function that compares the var of an "expo" to be used in a sort function
+-- function that compares the var of an "expo" to be used in sorting expos
 expoGreaterVar:: Expo -> Expo -> Ordering
 expoGreaterVar expo1 expo2 = if (var expo1) >= (var expo2) then GT else LT
 
--- function to verify that al the varuables have the same exponent
+-- function that compares the exponent of the highest "expo" to be used in sorting terms
+termGreaterExponent:: Term -> Term -> Ordering
+termGreaterExponent term1 term2 = if (expoNum (head (expos term1))) >= (expoNum (head (expos term2))) then LT else GT 
+
+-- function that compares the var of the highest "expo" to be used in sorting terms
+termGreaterVar:: Term -> Term -> Ordering
+termGreaterVar term1 term2 = if (var (head (expos term1))) >= (var (head (expos term2))) then GT else LT 
+
+-- function to verify that all the varuables have the same exponent
 compareExpoNum:: Expo -> Expo -> Bool 
 compareExpoNum expo1 expo2 = (expoNum expo1) == (expoNum expo2)
 
@@ -154,11 +162,10 @@ sumExpos expo1 expo2 = if (var expo1) == (var expo2)
 
 -- function to order expos first by exponent then by letter
 sortExpos:: [Expo] -> [Expo]
-sortExpos rcvList =  sortBy (expoGreaterVar) greatesExpoList ++ sortExpos (dropWhileList isEqual sortedByExpo greatesExpoList)
+sortExpos [] = []
+sortExpos rcvList =  sortBy (expoGreaterVar) greaterExpoList ++ sortExpos (dropWhileList isEqual sortedByExpo greaterExpoList)
                         where sortedByExpo = sortBy (expoGreaterNum) rcvList
-                              greatesExpoList = takeWhile (\a-> compareExpoNum (head sortedByExpo) a) sortedByExpo
-
--- function to see if expos are equal (after ordering)
+                              greaterExpoList = takeWhile (\a-> compareExpoNum (head sortedByExpo) a) sortedByExpo
 
 -- function to sum all expos if they are equal
 sumListExpos:: [Expo] -> [Expo]
@@ -176,6 +183,11 @@ sumListTerms termList = foldr (sumTerms) firstTerm [ x | x <- (tail termList), (
                         where firstTerm = head termList
 
 -- function to order terms
+sortTerms:: [Term] -> [Term]
+sortTerms [] = []
+sortTerms rcvList = sortBy (termGreaterVar) greaterTermList ++ sortTerms (dropWhileList isEqual sortedByTerm greaterTermList)
+                        where sortedByTerm = sortBy (termGreaterExponent) rcvList
+                              greaterTermList = takeWhile (\a-> compareExpoNum (head (expos  (head sortedByTerm))) ( head (expos a))) sortedByTerm
 
 -- function to multiply numeric by expoNum then take 1 from expoNum
 
@@ -183,6 +195,8 @@ sumListTerms termList = foldr (sumTerms) firstTerm [ x | x <- (tail termList), (
     -- implies functions to sum expos (their exponent)
 
 -- function to print term
+
+-- function to see if expos are equal (after ordering) (might not be necessary)
 
 -- EXTRA WORK
 
