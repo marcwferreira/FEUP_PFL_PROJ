@@ -113,7 +113,7 @@ termCreation termString = if isSignal (head termString)
 -- 4*x^2*y^2 + 2*(x*y)^2 + 2 new edge case
 
 -- Creates the polynomial
-poliCreation:: String -> [Term]
+poliCreation:: String -> Poli
 poliCreation stringList = map (termCreation) (smartStringDivider  (removeOccurencesList ' ' stringList))
 
 -- PARSER END
@@ -163,6 +163,20 @@ removeZeroExpos:: [Expo] -> [Expo]
 removeZeroExpos [] = []
 removeZeroExpos expoList = [x | x <- expoList, (expoNum x) /= 0]
 
+-- function to remove zeros exponents within a term
+removeZeroTerm:: Term -> Term
+removeZeroTerm rcvTerm = Term (signal rcvTerm) (numeric rcvTerm) (removeZeroExpos (expos rcvTerm))
+
+-- function remove terms with numeric as 0
+removeZeroPoli:: Poli -> Poli
+removeZeroPoli [] = []
+removeZeroPoli rcvPoli = [ x | x<- rcvPoli, (numeric x) /= 0]
+
+-- Funtion to get float with signal from Term
+termFloatSignal:: Term -> Float
+termFloatSignal rcvTerm = if (signal rcvTerm) == '+' then (numeric rcvTerm) else (-1*(numeric rcvTerm))
+                        
+
 -- NEXT FUNCTIONS
 
 -- function to order expos first by exponent then by letter
@@ -171,6 +185,13 @@ sortExpos [] = []
 sortExpos rcvList =  sortBy (expoGreaterVar) greaterExpoList ++ sortExpos (dropWhileList isEqual sortedByExpo greaterExpoList)
                         where sortedByExpo = sortBy (expoGreaterNum) rcvList
                               greaterExpoList = takeWhile (\a-> compareExpoNum (head sortedByExpo) a) sortedByExpo
+
+-- function to order terms
+sortTerms:: [Term] -> [Term]
+sortTerms [] = []
+sortTerms rcvList = sortBy (termGreaterVar) greaterTermList ++ sortTerms (dropWhileList isEqual sortedByTerm greaterTermList)
+                        where sortedByTerm = sortBy (termGreaterExponent) rcvList
+                              greaterTermList = takeWhile (\a-> compareExpoNum (head (expos  (head sortedByTerm))) ( head (expos a))) sortedByTerm
 
 -- function to sum all expos if they are equal
 sumListExpos:: [Expo] -> [Expo]
@@ -187,25 +208,68 @@ sumListTerms termList = foldr (sumTerms) firstTerm [ x | x <- (tail termList), (
                         : sumListTerms [ x | x <- termList, (expos firstTerm) /= (expos x)]
                         where firstTerm = head termList
 
--- function to order terms
-sortTerms:: [Term] -> [Term]
-sortTerms [] = []
-sortTerms rcvList = sortBy (termGreaterVar) greaterTermList ++ sortTerms (dropWhileList isEqual sortedByTerm greaterTermList)
-                        where sortedByTerm = sortBy (termGreaterExponent) rcvList
-                              greaterTermList = takeWhile (\a-> compareExpoNum (head (expos  (head sortedByTerm))) ( head (expos a))) sortedByTerm
-
--- function to multiply numeric by expoNum then take 1 from expoNum
+-- function to multiply numeric by expoNum then take 1 from expoNum (derivative)
 deriveTerm:: String ->Term -> Term
-deriveTerm deriveVar term1 = if newNumeric >= 0
-                                then Term '+'  newNumeric (Expo (var deriveExpo) ((expoNum deriveExpo)-1) : [x | x <- (expos term1) , (var x) /= deriveVar])
-                                else Term '-'  (-1*newNumeric) (Expo (var deriveExpo) ((expoNum deriveExpo)-1) : [x | x <- (expos term1) , (var x) /= deriveVar])
-                                where deriveExpo = (head (dropWhile (\a-> (var a) /= deriveVar) (expos term1)))
-                                      newNumeric = (numeric term1) * (expoNum deriveExpo)
+deriveTerm deriveVar term1 = if length (expos term1) == 0
+                                then Term '+' 0 []
+                                else
+                                    if newNumeric >= 0
+                                    then Term '+'  newNumeric (Expo (var deriveExpo) ((expoNum deriveExpo)-1) : nonDerivingTerms)
+                                    else Term '-'  (-1*newNumeric) (Expo (var deriveExpo) ((expoNum deriveExpo)-1) : nonDerivingTerms)
+                                    where deriveExpo = (head (dropWhile (\a-> (var a) /= deriveVar) (expos term1)))
+                                          newNumeric = (termFloatSignal term1) * (expoNum deriveExpo)
+                                          nonDerivingTerms = [x | x <- (expos term1) , (var x) /= deriveVar]
+
+-- function to derive 
 
 -- function to multiply terms (multiply all with all)
-    -- implies functions to sum expos (their exponent)
+multiplyTerm:: Term -> Term -> Term
+multiplyTerm term1 term2 = if newNumeric >= 0
+                            then Term '+' newNumeric (sumListExpos ((expos term1) ++ (expos term2)))
+                            else Term '-' (-1*newNumeric) (sumListExpos ((expos term1) ++ (expos term2)))
+                            where newNumeric = (termFloatSignal term1) * (termFloatSignal term2)
 
--- function to print term
+--function to multiply all terms
+multiplyPolis:: Poli -> Poli -> Poli
+multiplyPolis [] _ = []
+multiplyPolis _ [] = []
+multiplyPolis poli1 poli2 = [ (multiplyTerm x y) | x <- poli1, y <- poli2]
+
+
+-- AUX PRINT FUNCTIONS
+
+-- function to join list of strings with divider
+joinStrings:: Char -> [String] -> String
+joinStrings _ []  = ""
+joinStrings divider (x:xs) = foldl' (\a b -> a ++ [divider] ++ b) x xs
+
+-- function to transform expo into string
+expoToString:: Expo -> String
+expoToString rcvExpo = if (expoNum rcvExpo) > 0 
+                        then if (expoNum rcvExpo) == 1
+                            then var rcvExpo
+                            else (var rcvExpo) ++ "^" ++ (show (expoNum rcvExpo))
+                        else (var rcvExpo) ++ "^(" ++ (show (expoNum rcvExpo)) ++ ")"
+
+-- function to transform term into string
+termToString:: Term -> String
+termToString rcvTerm = (signal rcvTerm) : (show (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
+
+-- function to print first theme without signal if number is positive
+firstTermToString:: Term -> String
+firstTermToString rcvTerm = if ((signal rcvTerm) == '+')
+                            then (show (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
+                            else termToString rcvTerm
+
+--function to transform poli into string
+poliToString:: Poli -> String
+poliToString [] = "0"
+poliToString rcvPoli = firstTermToString (head rcvPoli) ++ " " ++ (joinStrings ' ' (map (termToString) (tail rcvPoli)))
+
+-- functions to automate processes
+    -- add normalize multiply derivate
+
+-- function to approxiamte floats
 
 -- EXTRA WORK
 
