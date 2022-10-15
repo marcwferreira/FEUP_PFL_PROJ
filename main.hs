@@ -1,11 +1,13 @@
 import Data.List
 import Data.Char
 
-data Expo = Expo {var :: String , exponent :: Float} deriving (Show)
-data Term = Term { signal :: Char, numeric :: Float, expos :: [Expo]} deriving (Show)
+-- Defining data and types for a polynomial
+
+data Expo = Expo {var :: String , expoNum :: Float} deriving (Eq, Show)
+data Term = Term {signal :: Char, numeric :: Float, expos :: [Expo]} deriving (Eq, Show)
 type Poli = [Term]
 
--- AUX FUNCTIONS
+-- AUX FUNCTIONS PARSER
 
 -- remove char from string
 removeOccurencesList:: Eq a => a -> [a] -> [a]
@@ -113,7 +115,56 @@ poliCreation stringList = map (termCreation) (smartStringDivider  (removeOccuren
 
 -- PARSER END
 
+-- AUX FUNCTIONS
 
+-- function that compares the exponent of an "expo" to be used in a sort function
+expoGreaterNum:: Expo -> Expo -> Ordering
+expoGreaterNum expo1 expo2 = if (expoNum expo1) >= (expoNum expo2) then LT else GT
+
+-- function that compares the var of an "expo" to be used in a sort function
+expoGreaterVar:: Expo -> Expo -> Ordering
+expoGreaterVar expo1 expo2 = if (var expo1) >= (var expo2) then GT else LT
+
+-- function to verify that al the varuables have the same exponent
+compareExpoNum:: Expo -> Expo -> Bool 
+compareExpoNum expo1 expo2 = (expoNum expo1) == (expoNum expo2)
+
+
+-- NEXT FUNCTIONS
+
+-- function to order expos first by exponent then by letter
+sortExpos:: [Expo] -> [Expo]
+sortExpos rcvList =  (head sortedByExpo) : sortBy (expoGreaterVar) (takeWhile (\a-> compareExpoNum (head sortedByExpo) a) (tail sortedByExpo))
+                        where sortedByExpo = sortBy (expoGreaterNum) rcvList
+
+-- function to see if expos are equal (after ordering)
+
+-- function so sum expos if equal
+
+-- function to order terms
+
+-- function to sum terms if equals
+
+-- function to multiply numeric by expoNum then take 1 from expoNum
+
+-- function to multiply terms (multiply all with all)
+    -- implies functions to sum expos (their exponent)
+
+-- function to print term
+
+-- EXTRA WORK
+
+-- parser with commands, for example:
+    -- ORDER {polynomial}
+    -- ADD {polynomial} {polynomial}
+    -- MULTIPLY {polylonimal} {polynomial}
+    -- DERIVE {polynomial}
+-- OBS: {polynomial} can be another function like : ADD {MULTIPLY {polynomial} {polynomial}} {DERIVE {ORDER {POLYNOMIAL}}}
+
+-- EXTRA WORK END
+
+
+--backup in case I screwed something up (this has a bug)
 {-
 -- divide string into substring with the terms of the polynomial
 smartStringDivider:: String -> [String]
