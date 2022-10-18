@@ -130,7 +130,7 @@ expoGreaterVar expo1 expo2 = if (var expo1) >= (var expo2) then GT else LT
 
 -- function that compares the exponent of the highest "expo" to be used in sorting terms
 termGreaterExponent:: Term -> Term -> Ordering
-termGreaterExponent term1 term2 = if (expoNum (head (expos term1))) >= (expoNum (head (expos term2))) then LT else GT 
+termGreaterExponent term1 term2 = if (expoNum (getFirstExpo (expos term1))) >= (expoNum (getFirstExpo (expos term2))) then LT else GT 
 
 -- function that compares the var of the highest "expo" to be used in sorting terms
 termGreaterVar:: Term -> Term -> Ordering
@@ -178,8 +178,22 @@ removeZeroPoli rcvPoli = [ x | x<- rcvPoli, (numeric x) /= 0]
 -- Funtion to get float with signal from Term
 termFloatSignal:: Term -> Float
 termFloatSignal rcvTerm = if (signal rcvTerm) == '+' then (numeric rcvTerm) else (-1*(numeric rcvTerm))
-                        
 
+-- funtion to get the first exponent of a list of expos, returns 0 if there is none
+getFirstExpo:: [Expo] -> Expo
+getFirstExpo [] = Expo "null" 0
+getFirstExpo rcvList = head rcvList
+
+-- auxiliary funtion to help the sort by length of expos
+termExposLength:: Term -> Term -> Ordering
+termExposLength term1 term2 = if (length (expos term1)) >= (length (expos term2)) then LT else GT
+
+
+-- function to sort terms by length of expos, used after getting terms with same highest exponent
+sortTermsByLength:: Poli -> Poli
+sortTermsByLength [] = []
+sortTermsByLength rcvPoli = sortBy (termExposLength) rcvPoli
+                        
 -- NEXT FUNCTIONS
 
 -- function to order expos first by exponent then by letter
@@ -189,12 +203,16 @@ sortExpos rcvList =  sortBy (expoGreaterVar) greaterExpoList ++ sortExpos (dropW
                         where sortedByExpo = sortBy (expoGreaterNum) rcvList
                               greaterExpoList = takeWhile (\a-> compareExpoNum (head sortedByExpo) a) sortedByExpo
 
+-- function to sort expos of a term
+sortTermExpos:: Term -> Term
+sortTermExpos rcvTerm = Term (signal rcvTerm) (numeric rcvTerm) (sortExpos (expos rcvTerm))
+
 -- function to order terms
 sortTerms:: [Term] -> [Term]
 sortTerms [] = []
-sortTerms rcvList = sortBy (termGreaterVar) greaterTermList ++ sortTerms (dropWhileList isEqual sortedByTerm greaterTermList)
-                        where sortedByTerm = sortBy (termGreaterExponent) rcvList
-                              greaterTermList = takeWhile (\a-> compareExpoNum (head (expos  (head sortedByTerm))) ( head (expos a))) sortedByTerm
+sortTerms rcvList = sortTermsByLength (sortBy (termGreaterVar) greaterTermList) ++ sortTerms (dropWhileList isEqual sortedByTerm greaterTermList)
+                    where sortedByTerm = sortBy (termGreaterExponent) rcvList
+                          greaterTermList = takeWhile (\a-> compareExpoNum (getFirstExpo (expos  (head sortedByTerm))) ( getFirstExpo (expos a))) sortedByTerm
 
 -- function to sum all expos if they are equal
 sumListExpos:: [Expo] -> [Expo]
@@ -202,6 +220,10 @@ sumListExpos [] = []
 sumListExpos expoList = foldr (sumExpos) firstExpo [ x | x <- (tail expoList), (var firstExpo) == (var x)]
                         : sumListExpos [ x | x <- expoList, (var firstExpo) /= (var x)]
                         where firstExpo = head expoList
+
+-- function to sum expos of a term if they are equal
+sumTermExpos:: Term -> Term
+sumTermExpos rcvTerm = Term (signal rcvTerm) (numeric rcvTerm) (sumListExpos (expos rcvTerm))
 
 
 -- function to sum all equal terms from polynomial
@@ -268,6 +290,21 @@ firstTermToString rcvTerm = if ((signal rcvTerm) == '+')
 poliToString:: Poli -> String
 poliToString [] = "0"
 poliToString rcvPoli = firstTermToString (head rcvPoli) ++ " " ++ (joinStrings ' ' (map (termToString) (tail rcvPoli)))
+
+-- MAIN FUNCTIONS
+
+-- function to normalize the polynomial
+normPoli:: String -> String
+normPoli [] = []
+normPoli rcvString = poliToString (sortTerms (removeZeroPoli (map removeZeroTerm (map (sumTermExpos) (map (sortTermExpos) (sumListTerms (map removeZeroTerm (map (sumTermExpos) (map (sortTermExpos) (poliCreation rcvString))))))))))
+
+-- function to add polynomials
+addPolis:: String -> String -> String
+addPolis [] poli2 = normPoli poli2
+addPolis poli1 [] = normPoli poli1
+addPolis poli1 poli2 = normPoli (poliToString (sumListTerms (poliCreation (normPoli poli1)) ++ (poliCreation (normPoli poli2))))
+
+-- sort terms by number size of expos TODO
 
 -- functions to automate processes
     -- add normalize multiply derivate
