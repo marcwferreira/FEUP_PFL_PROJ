@@ -75,7 +75,7 @@ dropWhileList cond list1 list2 = if cond (head list1) (head list2)
 
 -- Check last subString part to see if next signal is a divide or not
 verifyDivision:: String -> Bool
-verifyDivision [] = True
+verifyDivision [] = True  
 verifyDivision rcvString = not (last rcvString == '(' || last rcvString == '^')
 
 -- collects all substring until when it should actually be broken
@@ -109,8 +109,6 @@ termCreation [] = error "Term can not be empty"
 termCreation termString = if isSignal (head termString)
                             then Term (head termString) (getFloatFromString (takeWhileCharsFloat (tail termString))) (map (expoCreation) (split '*' (dropWhile (\a-> not(isLetter a)) termString)))
                             else Term '+' (getFloatFromString (takeWhileCharsFloat termString)) (map (expoCreation) (split '*' (dropWhile (\a-> not(isLetter a)) termString)))
-
--- 4*x^2*y^2 + 2*(x*y)^2 + 2 new edge case
 
 -- Creates the polynomial
 poliCreation:: String -> Poli
@@ -268,24 +266,31 @@ joinStrings:: Char -> [String] -> String
 joinStrings _ []  = ""
 joinStrings divider (x:xs) = foldl' (\a b -> a ++ [divider] ++ b) x xs
 
+-- function to transform floats into string depending on their value
+floatToString:: Float -> String
+floatToString rcvFloat = if (rcvFloat - (fromIntegral (round rcvFloat) :: Float)) == 0
+                         then (show (round rcvFloat :: Int))
+                         else if (rcvFloat - (fromIntegral (round rcvFloat) :: Float)) < 0.005
+                              then takeWhile (\a -> a /= '0') (show rcvFloat)
+                              else show rcvFloat                     
+
 -- function to transform expo into string
 expoToString:: Expo -> String
 expoToString rcvExpo = if (expoNum rcvExpo) > 0 
                         then if (expoNum rcvExpo) == 1
                             then var rcvExpo
-                            else (var rcvExpo) ++ "^" ++ (show (expoNum rcvExpo))
-                        else (var rcvExpo) ++ "^(" ++ (show (expoNum rcvExpo)) ++ ")"
+                            else (var rcvExpo) ++ "^" ++ (floatToString (expoNum rcvExpo))
+                        else (var rcvExpo) ++ "^(" ++ (floatToString (expoNum rcvExpo)) ++ ")"
 
 -- function to transform term into string
 termToString:: Term -> String
-termToString rcvTerm = (signal rcvTerm) : ' ' : (show (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
+termToString rcvTerm = (signal rcvTerm) : ' ' : (floatToString (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
 
 -- function to print first theme without signal if number is positive
 firstTermToString:: Term -> String
 firstTermToString rcvTerm = if ((signal rcvTerm) == '+')
-                            then (show (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
-                            else termToString rcvTerm
-
+                            then (floatToString (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
+                            else '-' : (floatToString (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
 --function to transform poli into string
 poliToString:: Poli -> String
 poliToString [] = "0"
@@ -296,7 +301,7 @@ poliToString rcvPoli = firstTermToString (head rcvPoli) ++ " " ++ (joinStrings '
 -- function to normalize the polynomial
 normPoli:: String -> String
 normPoli [] = []
-normPoli rcvString = poliToString (sortTerms (removeZeroPoli (map removeZeroTerm (map (sumTermExpos) (map (sortTermExpos) (sumListTerms (map removeZeroTerm (map (sumTermExpos) (map (sortTermExpos) (poliCreation rcvString))))))))))
+normPoli rcvString = poliToString (sortTerms (removeZeroPoli (map removeZeroTerm (map (sumTermExpos) (map (sortTermExpos) (sumListTerms (map removeZeroTerm (map (sumTermExpos) (map (sortTermExpos) (map removeZeroTerm (poliCreation rcvString)))))))))))
 
 -- function to add polynomials
 addPolis:: String -> String -> String
@@ -304,12 +309,10 @@ addPolis [] poli2 = normPoli poli2
 addPolis poli1 [] = normPoli poli1
 addPolis poli1 poli2 = normPoli (poliToString (sumListTerms (poliCreation (normPoli poli1)) ++ (poliCreation (normPoli poli2))))
 
--- sort terms by number size of expos TODO
-
 -- functions to automate processes
     -- add normalize multiply derivate
 
--- function to approxiamte floats
+-- function to approximate floats
 
 -- EXTRA WORK
 
