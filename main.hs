@@ -149,8 +149,11 @@ calculateFloatTerm term1 = if (signal term1) == '+'
 -- function to sum terms if equals
 sumTerms:: Term -> Term -> Term
 sumTerms term1 term2 = if (expos term1) == (expos term2)
-                        then Term '+' (calculateFloatTerm term1 + calculateFloatTerm term2) (expos term1)
+                        then if numbersSum >= 0
+                            then Term '+' numbersSum (expos term1)
+                            else Term '-' (-1*numbersSum) (expos term1)
                         else error "Can not sum terms with differents exponentials"
+                        where numbersSum = calculateFloatTerm term1 + calculateFloatTerm term2
 
 -- function to sum expos if equal
 sumExpos:: Expo -> Expo -> Expo
@@ -253,7 +256,7 @@ expoToString rcvExpo = if (expoNum rcvExpo) > 0
 
 -- function to transform term into string
 termToString:: Term -> String
-termToString rcvTerm = (signal rcvTerm) : (show (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
+termToString rcvTerm = (signal rcvTerm) : ' ' : (show (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
 
 -- function to print first theme without signal if number is positive
 firstTermToString:: Term -> String
@@ -273,7 +276,7 @@ poliToString rcvPoli = firstTermToString (head rcvPoli) ++ " " ++ (joinStrings '
 
 -- EXTRA WORK
 
--- parser with commands, for example:
+-- commands, for example:
     -- ORDER {polynomial}
     -- ADD {polynomial} {polynomial}
     -- MULTIPLY {polylonimal} {polynomial}
