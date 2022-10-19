@@ -232,7 +232,7 @@ sumListTerms termList = foldr (sumTerms) firstTerm [ x | x <- (tail termList), (
                         where firstTerm = head termList
 
 -- function to multiply numeric by expoNum then take 1 from expoNum (derivative)
-deriveTerm:: String ->Term -> Term
+deriveTerm:: String -> Term -> Term
 deriveTerm deriveVar term1 = if length (expos term1) == 0
                                 then Term '+' 0 []
                                 else
@@ -268,11 +268,18 @@ joinStrings divider (x:xs) = foldl' (\a b -> a ++ [divider] ++ b) x xs
 
 -- function to transform floats into string depending on their value
 floatToString:: Float -> String
-floatToString rcvFloat = if (rcvFloat - (fromIntegral (round rcvFloat) :: Float)) == 0
+floatToString rcvFloat = if (rcvFloat - (fromIntegral (round rcvFloat) :: Float)) <= 0.0005 && ((fromIntegral (round rcvFloat) :: Float) - rcvFloat) <= 0.0005
                          then (show (round rcvFloat :: Int))
-                         else if (rcvFloat - (fromIntegral (round rcvFloat) :: Float)) < 0.005
+                         else --if  (read [last rcvNum] :: Float) >= 5 
+                              --then take 4 (show (rcvFloat+0.01))
+                              --else safeInit rcvNum
+                              --where rcvNum = take 5 (show rcvFloat)
+                              (show rcvFloat)
+                             {-
+                             if (rcvFloat - (fromIntegral (round rcvFloat) :: Float)) 
                               then takeWhile (\a -> a /= '0') (show rcvFloat)
-                              else show rcvFloat                     
+                              else show rcvFloat  
+                              -}                   
 
 -- function to transform expo into string
 expoToString:: Expo -> String
@@ -309,18 +316,18 @@ addPolis [] poli2 = normPoli poli2
 addPolis poli1 [] = normPoli poli1
 addPolis poli1 poli2 = normPoli (poliToString (sumListTerms (poliCreation (normPoli poli1)) ++ (poliCreation (normPoli poli2))))
 
--- functions to automate processes
-    -- add normalize multiply derivate
+-- function to multiply polynomial
+multPolis:: String -> String -> String
+multPolis _ [] = "can't multiply with empty polynomial"
+multPolis [] _ = "can't multiply with empty polynomial"
+multPolis poli1 poli2 = normPoli (poliToString (multiplyPolis (poliCreation (normPoli poli1)) (poliCreation (normPoli poli2))))
 
--- function to approximate floats
-
--- EXTRA WORK
-
--- commands, for example:
-    -- ORDER {polynomial}
-    -- ADD {polynomial} {polynomial}
-    -- MULTIPLY {polylonimal} {polynomial}
-    -- DERIVE {variable} {polynomial}
--- OBS: {polynomial} can be another function like : ADD {MULTIPLY {polynomial} {polynomial}} {DERIVE {x} {ORDER {POLYNOMIAL}}}
-
--- EXTRA WORK END
+-- function to derivate a terminal
+derivPoli:: String -> String -> String
+derivPoli _ [] = []
+derivPoli deriveVar rcvPoli = normPoli (poliToString (map (deriveTerm deriveVar) (poliCreation (normPoli rcvPoli))))
+ 
+--TODO
+-- fix function to approximate floats
+-- fix sorting of terms 
+-- generate tests (readme)
