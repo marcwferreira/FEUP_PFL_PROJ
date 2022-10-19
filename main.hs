@@ -194,12 +194,15 @@ sortTermsByLength rcvPoli = sortBy (termExposLength) rcvPoli
                         
 -- NEXT FUNCTIONS
 
--- function to order expos first by exponent then by letter
+-- function to order expos first by letter then by exponent
 sortExpos:: [Expo] -> [Expo]
 sortExpos [] = []
-sortExpos rcvList =  sortBy (expoGreaterVar) greaterExpoList ++ sortExpos (dropWhileList isEqual sortedByExpo greaterExpoList)
+sortExpos rcvList = sortBy (expoGreaterNum) orderVarList ++ sortExpos (dropWhileList isEqual sortedByVar orderVarList)
+                    where sortedByVar = sortBy (expoGreaterVar) rcvList
+                          orderVarList = takeWhile (\a -> (var a) == (var (head sortedByVar))) sortedByVar
+{-sortExpos rcvList =  sortBy (expoGreaterVar) greaterExpoList ++ sortExpos (dropWhileList isEqual sortedByExpo greaterExpoList)
                         where sortedByExpo = sortBy (expoGreaterNum) rcvList
-                              greaterExpoList = takeWhile (\a-> compareExpoNum (head sortedByExpo) a) sortedByExpo
+                              greaterExpoList = takeWhile (\a-> compareExpoNum (head sortedByExpo) a) sortedByExpo-}
 
 -- function to sort expos of a term
 sortTermExpos:: Term -> Term
@@ -315,7 +318,7 @@ addPolis poli1 poli2 = normPoli (poliToString (sumListTerms (poliCreation (normP
 multPolis:: String -> String -> String
 multPolis _ [] = "can't multiply with empty polynomial"
 multPolis [] _ = "can't multiply with empty polynomial"
-multPolis poli1 poli2 = (poliToString (multiplyPolis (poliCreation (normPoli poli1)) (poliCreation (normPoli poli2))))
+multPolis poli1 poli2 = normPoli (poliToString (multiplyPolis (poliCreation (normPoli poli1)) (poliCreation (normPoli poli2))))
 
 -- function to derivate a terminal
 derivPoli:: String -> String -> String
@@ -323,5 +326,5 @@ derivPoli _ [] = []
 derivPoli deriveVar rcvPoli = normPoli (poliToString (map (deriveTerm deriveVar) (poliCreation (normPoli rcvPoli))))
  
 --TODO
--- fix sorting of terms 
+-- fix sorting of terms - actually first by letter than by highest exponent then by total power
 -- generate tests (readme)
