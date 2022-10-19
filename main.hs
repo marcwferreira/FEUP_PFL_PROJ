@@ -268,18 +268,13 @@ joinStrings divider (x:xs) = foldl' (\a b -> a ++ [divider] ++ b) x xs
 
 -- function to transform floats into string depending on their value
 floatToString:: Float -> String
-floatToString rcvFloat = if (rcvFloat - (fromIntegral (round rcvFloat) :: Float)) <= 0.0005 && ((fromIntegral (round rcvFloat) :: Float) - rcvFloat) <= 0.0005
+floatToString rcvFloat = if (rcvFloat - (fromIntegral (round rcvFloat) :: Float)) < 0.001 && ((fromIntegral (round rcvFloat) :: Float) - rcvFloat) < 0.001
                          then (show (round rcvFloat :: Int))
-                         else --if  (read [last rcvNum] :: Float) >= 5 
-                              --then take 4 (show (rcvFloat+0.01))
-                              --else safeInit rcvNum
-                              --where rcvNum = take 5 (show rcvFloat)
-                              (show rcvFloat)
-                             {-
-                             if (rcvFloat - (fromIntegral (round rcvFloat) :: Float)) 
-                              then takeWhile (\a -> a /= '0') (show rcvFloat)
-                              else show rcvFloat  
-                              -}                   
+                         else if (last approxNum == '.') then (safeInit approxNum) else approxNum
+                         where rcvNum = take 5 (show rcvFloat)
+                               approxNum = if (any (\x -> x == (last rcvNum))  ['5','6'..'9'])
+                                           then reverse (dropWhile (isEqual '0') (reverse (take 4 (show (rcvFloat+0.01)))))
+                                           else reverse (dropWhile (isEqual '0') (reverse (safeInit rcvNum)))
 
 -- function to transform expo into string
 expoToString:: Expo -> String
@@ -320,7 +315,7 @@ addPolis poli1 poli2 = normPoli (poliToString (sumListTerms (poliCreation (normP
 multPolis:: String -> String -> String
 multPolis _ [] = "can't multiply with empty polynomial"
 multPolis [] _ = "can't multiply with empty polynomial"
-multPolis poli1 poli2 = normPoli (poliToString (multiplyPolis (poliCreation (normPoli poli1)) (poliCreation (normPoli poli2))))
+multPolis poli1 poli2 = (poliToString (multiplyPolis (poliCreation (normPoli poli1)) (poliCreation (normPoli poli2))))
 
 -- function to derivate a terminal
 derivPoli:: String -> String -> String
@@ -328,6 +323,5 @@ derivPoli _ [] = []
 derivPoli deriveVar rcvPoli = normPoli (poliToString (map (deriveTerm deriveVar) (poliCreation (normPoli rcvPoli))))
  
 --TODO
--- fix function to approximate floats
 -- fix sorting of terms 
 -- generate tests (readme)
