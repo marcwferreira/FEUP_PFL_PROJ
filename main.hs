@@ -200,9 +200,6 @@ sortExpos [] = []
 sortExpos rcvList = sortBy (expoGreaterNum) orderVarList ++ sortExpos (dropWhileList isEqual sortedByVar orderVarList)
                     where sortedByVar = sortBy (expoGreaterVar) rcvList
                           orderVarList = takeWhile (\a -> (var a) == (var (head sortedByVar))) sortedByVar
-{-sortExpos rcvList =  sortBy (expoGreaterVar) greaterExpoList ++ sortExpos (dropWhileList isEqual sortedByExpo greaterExpoList)
-                        where sortedByExpo = sortBy (expoGreaterNum) rcvList
-                              greaterExpoList = takeWhile (\a-> compareExpoNum (head sortedByExpo) a) sortedByExpo-}
 
 -- function to sort expos of a term
 sortTermExpos:: Term -> Term
@@ -326,5 +323,5 @@ derivPoli _ [] = []
 derivPoli deriveVar rcvPoli = normPoli (poliToString (map (deriveTerm deriveVar) (poliCreation (normPoli rcvPoli))))
  
 --TODO
--- fix sorting of terms - actually first by letter than by highest exponent then by total power
+-- fix sorting of terms - actually first by letter than by highest exponent (then by total power)
 -- generate tests (readme)
