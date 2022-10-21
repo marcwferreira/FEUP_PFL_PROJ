@@ -128,13 +128,37 @@
 > &nbsp; Return value<br>
 > &nbsp; &nbsp; &nbsp; This function returns a string of the mult result.
 > - EXAMPLES: <br>
-> &nbsp; Derivation of empty polynomial - **derivPoli &nbsp; ""**<br>
+> &nbsp; Derivation of empty polynomial - **derivPoli &nbsp; "x" &nbsp; ""**<br>
 > &nbsp; &nbsp; **result** ""
+> <br><br>
+> &nbsp; Derivation of a number - **derivPoli &nbsp; "x" &nbsp; "3"**<br>
+> &nbsp; &nbsp; **result** ""
+> <br><br>
+> &nbsp; Derivation of a simple variable - **derivPoli &nbsp; "x" &nbsp; "3x"**<br>
+> &nbsp; &nbsp; **result** "3"
+> <br><br>
+> &nbsp; Derivation of a non-existing variable - **derivPoli &nbsp; "y" &nbsp; "3x"**<br>
+> &nbsp; &nbsp; **result** "3x"
+> <br><br>
+> &nbsp; Derivation of a polynomial with multiple variables - **derivPoli &nbsp; "x" &nbsp; "3x^2*y^2"**<br>
+> &nbsp; &nbsp; **result** "6y^2*x" <b>!!CHECK THIS EXAMPLE!!</b>
+> <br><br>
+> &nbsp; Derivation of a polynomial with negative floats expoents - **derivPoli &nbsp; "x" &nbsp; "3x^-2.3"**<br>
+> &nbsp; &nbsp; **result** "-6.9x^-3.3" <b>!!CHECK THIS EXAMPLE!!</b>
 > <br><br>
 > &nbsp; These examples can be mixed to form more complex examples <br>
 > - AUTHORS: <br>
 > &nbsp; Written by **Andre Costa** and **Marcos Ferreira**.
 
-> duvidas:
-> se derivarmos um polinómio e dermos uma variável que este não tenha o que retorna?
+> ## EXTRA FUNCIONALITIES
+> - floats in polynomials included
+> - derivation on a single variable
+> - aproximation on floats
+> - negative numbers included on variables and expoents
+> <br><br>
+>> ### DÚVIDAS:
+>>
+>> se derivarmos um polinómio e dermos uma variável que este não tenha o que retorna?
+>> se derivarmos um numero sobre uma variavel, o número como não tem variável é sempre derivado?
+>> por causa do exemplo de cima não faz sentido derivar sempre o polinómio todo?
 > rever o que eu fiz
