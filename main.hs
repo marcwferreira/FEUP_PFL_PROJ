@@ -1,7 +1,7 @@
 import Data.List
 import Data.Char
 
--- Defining data and types for a polynomial
+-- DATATYPE DEFINITION
 
 data Expo = Expo {var :: String , expoNum :: Float} deriving (Eq, Show)
 data Term = Term {signal :: Char, numeric :: Float, expos :: [Expo]} deriving (Eq, Show)
@@ -12,7 +12,6 @@ type Poli = [Term]
 -- remove char from string
 removeOccurencesList:: Eq a => a -> [a] -> [a]
 removeOccurencesList rcvItem rcvList = filter (/= rcvItem) rcvList
-
 
 -- Checks is char recevied is a signal (+ or -)
 isSignal:: Char -> Bool
@@ -52,13 +51,10 @@ checkFloatString floatString = ((foldr (\x sum -> if x == '.' then sum+1 else su
 getFloatFromString:: String -> Float 
 getFloatFromString [] = 1
 getFloatFromString formString = if (checkFloatString formString) --check if string can be transformed into float
-                                then read formString :: Float
+                                then if (take 1  (surroudingParethesis formString)) == "+"
+                                     then read (tail (surroudingParethesis formString)) :: Float
+                                     else read (surroudingParethesis formString) :: Float
                                 else error "invalid number in polinomyal" -- throw an arrow if it can't be transformed
-
--- Divides a string using + or - with these symbols at the beginning of the next one (not being used)
-stringDivider:: String -> [String]
-stringDivider [] = []
-stringDivider rcvString = ([head rcvString]++(takeWhile (\a -> (a/= '+' && a /= '-')) (tail rcvString))) : stringDivider (dropWhile (\a -> (a/= '+' && a /= '-')) (tail rcvString))
 
 -- Checks if two itens are equal
 isEqual:: Eq a => a -> a -> Bool
@@ -113,8 +109,6 @@ termCreation termString = if isSignal (head termString)
 -- Creates the polynomial
 poliCreation:: String -> Poli
 poliCreation stringList = map (termCreation) (smartStringDivider  (removeOccurencesList ' ' stringList))
-
--- PARSER END
 
 -- AUX FUNCTIONS
 
@@ -192,7 +186,7 @@ sortTermsByLength:: Poli -> Poli
 sortTermsByLength [] = []
 sortTermsByLength rcvPoli = sortBy (termExposLength) rcvPoli
                         
--- NEXT FUNCTIONS
+-- COMPLIMENTARY FUNCTIONS
 
 -- function to order expos first by letter then by exponent
 sortExpos:: [Expo] -> [Expo]
@@ -236,14 +230,15 @@ deriveTerm:: String -> Term -> Term
 deriveTerm deriveVar term1 = if length (expos term1) == 0
                                 then Term '+' 0 []
                                 else
-                                    if newNumeric >= 0
-                                    then Term '+'  newNumeric (Expo (var deriveExpo) ((expoNum deriveExpo)-1) : nonDerivingTerms)
-                                    else Term '-'  (-1*newNumeric) (Expo (var deriveExpo) ((expoNum deriveExpo)-1) : nonDerivingTerms)
-                                    where deriveExpo = (head (dropWhile (\a-> (var a) /= deriveVar) (expos term1)))
+                                    if (expoNum deriveExpo) == 0
+                                    then Term '+' 0 []
+                                    else if newNumeric >= 0
+                                         then Term '+'  newNumeric (Expo (var deriveExpo) ((expoNum deriveExpo)-1) : nonDerivingTerms)
+                                         else Term '-'  (-1*newNumeric) (Expo (var deriveExpo) ((expoNum deriveExpo)-1) : nonDerivingTerms)
+                                    where matchExpos = dropWhile (\a-> (var a) /= deriveVar) (expos term1)
+                                          deriveExpo = if (length matchExpos ==0) then (Expo deriveVar 0) else (head matchExpos)
                                           newNumeric = (termFloatSignal term1) * (expoNum deriveExpo)
                                           nonDerivingTerms = [x | x <- (expos term1) , (var x) /= deriveVar]
-
--- function to derive 
 
 -- function to multiply terms (multiply all with all)
 multiplyTerm:: Term -> Term -> Term
@@ -258,8 +253,7 @@ multiplyPolis [] _ = []
 multiplyPolis _ [] = []
 multiplyPolis poli1 poli2 = [ (multiplyTerm x y) | x <- poli1, y <- poli2]
 
-
--- AUX PRINT FUNCTIONS
+-- PRINT FUNCTIONS
 
 -- function to join list of strings with divider
 joinStrings:: Char -> [String] -> String
@@ -269,12 +263,18 @@ joinStrings divider (x:xs) = foldl' (\a b -> a ++ [divider] ++ b) x xs
 -- function to transform floats into string depending on their value
 floatToString:: Float -> String
 floatToString rcvFloat = if (rcvFloat - (fromIntegral (round rcvFloat) :: Float)) < 0.001 && ((fromIntegral (round rcvFloat) :: Float) - rcvFloat) < 0.001
-                         then (show (round rcvFloat :: Int))
-                         else if (last approxNum == '.') then (safeInit approxNum) else approxNum
-                         where rcvNum = take 5 (show rcvFloat)
-                               approxNum = if (any (\x -> x == (last rcvNum))  ['5','6'..'9'])
-                                           then reverse (dropWhile (isEqual '0') (reverse (take 4 (show (rcvFloat+0.01)))))
-                                           else reverse (dropWhile (isEqual '0') (reverse (safeInit rcvNum)))
+                         then (show (round rcvFloat :: Int)) --round to integer
+                         else if (rcvSignal) == '+'
+                              then  if (last approxNum == '.') then (safeInit approxNum) else approxNum
+                              else if (last approxNum == '.') then (safeInit "-"++approxNum) else "-"++approxNum
+                         where rcvSignal = if (rcvFloat < 0) then '-' else '+' -- find if number is positive or negative
+                               absoluteNum = if (rcvFloat < 0) then -1*rcvFloat else rcvFloat
+                               rcvNum = if (rcvSignal == '+') 
+                                        then take 5 ((show rcvFloat)++"00") --take five first numbers
+                                        else take 5 (((show (-1*rcvFloat))++"00")) -- if negative take five first numbers without signal
+                               approxNum = if (any (\x -> x == (last rcvNum))  ['5','6'..'9']) -- if 0.00x is 5 or more, approximate by doing +0.01
+                                           then reverse (dropWhile (isEqual '0') (reverse (take 4 (show (absoluteNum+0.005))))) -- adding +0.01
+                                           else reverse (dropWhile (isEqual '0') (reverse (safeInit rcvNum))) -- just taking the number
 
 -- function to transform expo into string
 expoToString:: Expo -> String
@@ -293,6 +293,7 @@ firstTermToString:: Term -> String
 firstTermToString rcvTerm = if ((signal rcvTerm) == '+')
                             then (floatToString (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
                             else '-' : (floatToString (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
+
 --function to transform poli into string
 poliToString:: Poli -> String
 poliToString [] = "0"
@@ -303,7 +304,7 @@ poliToString rcvPoli = firstTermToString (head rcvPoli) ++ " " ++ (joinStrings '
 -- function to normalize the polynomial
 normPoli:: String -> String
 normPoli [] = []
-normPoli rcvString = poliToString (sortTerms (removeZeroPoli (map removeZeroTerm (map (sumTermExpos) (map (sortTermExpos) (sumListTerms (map removeZeroTerm (map (sumTermExpos) (map (sortTermExpos) (map removeZeroTerm (poliCreation rcvString)))))))))))
+normPoli rcvString = poliToString (sortTerms (removeZeroPoli (map (sumTermExpos) (map (sortTermExpos) (sumListTerms (map (sumTermExpos) (map (sortTermExpos) (map removeZeroTerm (poliCreation rcvString)))))))))
 
 -- function to add polynomials
 addPolis:: String -> String -> String
@@ -322,6 +323,3 @@ derivPoli:: String -> String -> String
 derivPoli _ [] = []
 derivPoli deriveVar rcvPoli = normPoli (poliToString (map (deriveTerm deriveVar) (poliCreation (normPoli rcvPoli))))
  
---TODO
--- fix sorting of terms - actually first by letter than by highest exponent (then by total power)
--- generate tests (readme)
