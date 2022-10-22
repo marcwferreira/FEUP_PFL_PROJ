@@ -126,6 +126,7 @@ expoGreaterNum expo1 expo2 = if (expoNum expo1) >= (expoNum expo2) then LT else 
 
 -- function that compares the var of an "expo" to be used in sorting expos
 expoGreaterVar:: Expo -> Expo -> Ordering
+
 expoGreaterVar expo1 expo2 = if (var expo1) >= (var expo2) then GT else LT
 
 -- function that compares the exponent of the highest "expo" to be used in sorting terms
@@ -134,7 +135,7 @@ termGreaterExponent term1 term2 = if (expoNum (getFirstExpo (expos term1))) >= (
 
 -- function that compares the var of the highest "expo" to be used in sorting terms
 termGreaterVar:: Term -> Term -> Ordering
-termGreaterVar term1 term2 = if (var (head (expos term1))) >= (var (head (expos term2))) then GT else LT 
+termGreaterVar term1 term2 = if (var (getFirstExpo (expos term1))) >= (var (getFirstExpo (expos term2))) then GT else LT 
 
 -- function to verify that all the varuables have the same exponent
 compareExpoNum:: Expo -> Expo -> Bool 
@@ -181,7 +182,7 @@ termFloatSignal rcvTerm = if (signal rcvTerm) == '+' then (numeric rcvTerm) else
 
 -- funtion to get the first exponent of a list of expos, returns 0 if there is none
 getFirstExpo:: [Expo] -> Expo
-getFirstExpo [] = Expo "null" 0
+getFirstExpo [] = Expo "zzznull" 0
 getFirstExpo rcvList = head rcvList
 
 -- NOT USED BY NOW -----------------------------------------------------------------------------------------------------------
@@ -211,6 +212,11 @@ sortTermsByPower:: Poli -> Poli
 sortTermsByPower [] = []
 sortTermsByPower rcvPoli = sortBy (termsExposPower) rcvPoli
 
+-- function to check if element is in list
+checkListElement:: Eq a => [a] -> a -> Bool
+checkListElement [] _ = False
+checkListElement (x:xs) ele1 = if (x == ele1) then True else (checkListElement xs ele1)
+
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                
 -- COMPLIMENTARY FUNCTIONS ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -229,9 +235,10 @@ sortTermExpos rcvTerm = Term (signal rcvTerm) (numeric rcvTerm) (sortExpos (expo
 -- function to order terms
 sortTerms:: [Term] -> [Term]
 sortTerms [] = []
-sortTerms rcvList = sortTermsByPower (sortBy (termGreaterVar) greaterTermList) ++ sortTerms (dropWhileList isEqual sortedByTerm greaterTermList)
-                    where sortedByTerm = sortBy (termGreaterExponent) rcvList
-                          greaterTermList = takeWhile (\a-> compareExpoNum (getFirstExpo (expos  (head sortedByTerm))) ( getFirstExpo (expos a))) sortedByTerm
+sortTerms rcvList =  (sortBy (termGreaterExponent) (sortTermsByPower (sortBy (termGreaterVar) greaterTermList))) ++ sortTerms (filter (\a -> not (checkListElement greaterTermList a)) sortedByTerm)
+                     where sortedByTerm = sortBy (termGreaterVar) rcvList
+                           firstAlphaTerm = foldr1 min [y | x<- sortedByTerm, y <- [var (getFirstExpo (expos x))]]
+                           greaterTermList = filter (\a-> (var (getFirstExpo (expos a))) == firstAlphaTerm) sortedByTerm
 
 -- function to sum all expos if they are equal
 sumListExpos:: [Expo] -> [Expo]
@@ -315,19 +322,27 @@ expoToString rcvExpo = if (expoNum rcvExpo) > 0
 
 -- function to transform term into string
 termToString:: Term -> String
-termToString rcvTerm = (signal rcvTerm) : ' ' : (floatToString (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
+termToString rcvTerm = if floatToString (numeric rcvTerm) == "1"
+                       then (signal rcvTerm) : " " ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
+                       else (signal rcvTerm) : " " ++ (floatToString (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
 
 -- function to print first theme without signal if number is positive
 firstTermToString:: Term -> String
 firstTermToString rcvTerm = if ((signal rcvTerm) == '+')
-                            then (floatToString (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
-                            else '-' : (floatToString (numeric rcvTerm)) ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
+                            then numericTerm ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
+                            else '-' : numericTerm ++ (joinStrings '*' (map (expoToString) (expos rcvTerm)))
+                            where numericTerm = if (floatToString (numeric rcvTerm)) == "1" then "" else (floatToString (numeric rcvTerm))
 
---function to transform poli into string
+-- function to remove emptySpace at the end if needed
+removeDeadSpace:: String -> String
+removeDeadSpace [] = []
+removeDeadSpace rcvString = if (last rcvString) == ' ' then init rcvString else rcvString
+
+-- function to transform poli into string
 poliToString:: Poli -> String
 poliToString [] = "0"
-poliToString rcvPoli = firstTermToString (head rcvPoli) ++ " " ++ (joinStrings ' ' (map (termToString) (tail rcvPoli)))
-
+poliToString rcvPoli = removeDeadSpace (firstTermToString (head rcvPoli) ++ " " ++ (joinStrings ' ' (map (termToString) (tail rcvPoli))))
+                            
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- MAIN FUNCTIONS -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -335,7 +350,7 @@ poliToString rcvPoli = firstTermToString (head rcvPoli) ++ " " ++ (joinStrings '
 -- function to normalize the polynomial
 normPoli:: String -> String
 normPoli [] = []
-normPoli rcvString = poliToString (sortTerms (removeZeroPoli (map (sumTermExpos) (map (sortTermExpos) (sumListTerms (map (sumTermExpos) (map (sortTermExpos) (map removeZeroTerm (poliCreation rcvString)))))))))
+normPoli rcvString = poliToString (sortTerms (removeZeroPoli (map (sortTermExpos) (map (sumTermExpos) (sumListTerms (map (sortTermExpos) (map (sumTermExpos) (map removeZeroTerm (poliCreation rcvString)))))))))
 
 -- function to add polynomials
 addPolis:: String -> String -> String

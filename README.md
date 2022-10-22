@@ -32,11 +32,11 @@ Done for the subject of PFL at FEUP.
 > &nbsp; Term with same pair (variable, exponent) -  **normPoli "2x^2*x^2"**<br>
 > &nbsp; &nbsp; **result** "2x^4"
 > <br><br>
-> &nbsp; Polynomial term with variables not sorted - **normPoli "2y*x^2"**<br>
-> &nbsp; &nbsp; **result** "2x^2*y"
+> &nbsp; Polynomial term with variables not sorted - **normPoli "2y^2*x"**<br>
+> &nbsp; &nbsp; **result** "2x*y^2"
 > <br><br>
-> &nbsp; Polynomial with terms not sorted - **normPoli "2y*x^2"** <br>
-> &nbsp; &nbsp; **result** "2x^2*y"
+> &nbsp; Polynomial with terms not sorted - **normPoli "2y\*x^2"** <br>
+> &nbsp; &nbsp; **result** "2x^2\*y"
 > <br><br>
 > &nbsp; These examples can be mixed to form more complex examples <br>
 > 
@@ -112,7 +112,7 @@ Done for the subject of PFL at FEUP.
 > &nbsp; Multiplication of terms with same variables - **multPolis &nbsp; "3x" &nbsp; "6x"**<br>
 > &nbsp; &nbsp; **result** "18x^2"
 > <br><br>
-> &nbsp; Multiplication with required normalization after - **multPolis &nbsp; "3x^2*y + 3y" &nbsp; "6y + 6x^2*y"**<br>
+> &nbsp; Multiplication with required normalization after - **multPolis &nbsp; "3x^2\*y + 3y" &nbsp; "6y + 6x^2\*y"**<br>
 > &nbsp; &nbsp; **result** "18x^4*y^2 + 36x^2*y^2 + 18y^2"
 > <br><br>
 > &nbsp; These examples can be mixed to form more complex examples <br>
@@ -125,7 +125,7 @@ Done for the subject of PFL at FEUP.
 > - SYNOPSIS: <br>
 > &nbsp; derivPoli [Term] [polynomial string]
 > - DESCRIPTION: <br>
-> &nbsp; Derivs a polynomial by a variable. <br>
+> &nbsp; Derivates a polynomial by a variable. <br>
 > &nbsp; Mandatory arguments: <br>
 > &nbsp; &nbsp; &nbsp; <**Term**> <br>
 > &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; variable <br>
@@ -150,7 +150,7 @@ Done for the subject of PFL at FEUP.
 > &nbsp; &nbsp; **result** "6x*y^2"
 > <br><br>
 > &nbsp; Derivation of a polynomial with negative floats expoents - **derivPoli &nbsp; "x" &nbsp; "3x^-2.3"**<br>
-> &nbsp; &nbsp; **result** "-6.9x^-3.3"
+> &nbsp; &nbsp; **result** "-6.9x^(-3.3)"
 > <br><br>
 > &nbsp; These examples can be mixed to form more complex examples <br>
 > - AUTHORS: <br>
@@ -218,7 +218,7 @@ After the initial division we will have a list of string, these will be the dife
 &nbsp; &nbsp; &nbsp; name of the polynomial will be the letter until the end of the substring or "^" (whichever happens first). <br>
 &nbsp; &nbsp; &nbsp; If a "^" is found exponent number is whatever is after it (at this point parethesis are included), else exponent is assigned as 1. <br>
 &nbsp; &nbsp; &nbsp; If number is not assigned the same verification will occur as it was done for the numerical part of the term, however there is an additional step that is to remove the parenthesis if needed and the "+" before the number is found (haskell can't convert with the plus signal in the number).<br>
-OBS: this list can be empty! <br><br>
+<b>OBS:</b> this list can be empty! <br><br>
 
 This is the processing done for a term, a polynomial is just a list of terms so this process is repeated as needed.
 
@@ -254,6 +254,7 @@ Functions used to transform a polynomial back into a string:
 - expoToString: Transforms an Expo into a string.
 - termToString: Transforms a Term into a string.
 - firstTermToString: Transforms the first term into a string (because it doesn't have "+" at the front)
+- removeDeadSpace: removes a space at the end of the string if it exists
 - poliToString: Transforms a polynomial into a string. (Uses the functions above)
 
 Many more auxiliary function was used for this project, however due to size it will not be included in the ReadMe. If you wish these can be viewed at the code itself. The code is commented and orfanized (at least tried).<br>
@@ -274,29 +275,30 @@ The main function are a combination of these functions mentioned above:
 
 >### NORMALIZATION: COMPLEX TESTS
 > <br>
-> 1. "3x^2*y^5.2 -4y^3 -15"<br>
-> 2. "5y^4*x^4*z + y^2*x^3 + 5.5555x^6"<br>
+> 1. normPoli "3x^2*y^5.2 -4y^3 -15"<br>
+> 2. normPoli "5y^4*x^4*z + y^2*x^3 + 5.5555x^6"<br>
 >
 <br>
 
 >### ADDITION: COMPLEX TESTS
 > <br>
-> 1. "3x^2*y^5.2 -4y^3 -15" + "6.4x^-3 + 3y^3 + 40.65"<br>
-> 2. "4.2x^2*y^2*z -3 +4*z^2" - "2*z^2 - 4x^2*y^2*z +4.6 -3.1"<br> 
+> 1. addPolis "3x^2*y^5.2 -4y^3 -15" "6.4x^-3 + 3y^3 + 40.65"<br>
+> 2. addPolis "4.2x^2*y^2*z -3 +4*z^2" "2*z^2 - 4x^2*y^2*z +4.6 -3.1"<br> 
+> 3. addPolis "3x^2*y^5.2 -4y^3 -15" "6.4y^-3 + 3y^3 + 40.65y"<br>
 >
 <br>
 
 >### MULTIPLICATION: COMPLEX TESTS
 > <br>
-> 1. "3x^2*y^5.2 -4y^3 -15" * "6.4x^-3 + 3y^3 + 40.65"<br>
-> 2. "4x^3 + 3y -2.2x^2*z" * "-3.5x^3"<br>
+> 1. multPolis "3x^2*y^5.2 -15" "6.4x^-3 + 40.65"<br>
+> 2. multPolis "4x^3 + 3y -2.2x^2*z" "-3.5x^3"<br>
 >
 <br>
 
 >### DERIVATION: COMPLEX TESTS
 > <br>
-> 1. "x" "3x^2*y^5.2 -4y^3 -15x^-3"<br>
-> 2. "y" "3x^2*y^5.2 -4y^3 -15x^-3"<br> 
+> 1. derivPoli "x" "3x^2*y^5.2 -4y^3 -15x^-3"<br>
+> 2. derivPoli "y" "3x^2*y^5.2 -4y^3 -15x^-3"<br> 
 >
 <br>
 
