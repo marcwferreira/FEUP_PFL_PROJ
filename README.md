@@ -164,7 +164,7 @@ input in the same way a polynomial is represented by the program. <br><br>
 Simples rules to use the function: <br>
 - Numbers can have a decimal part, for it use "." : "2.3", "4.89"
 - Numbers can be negative: "-3", "-2.5"
-- Variables needs to be divided using * : "2x*y", "2x^2*y^2"
+- Variables needs to be divided using * : "2x*y", "2x^2\*y^2"
 - Variable can have longer names: "2xy" is 2 (xy) while "2x*y" is 2 (x) (y)
 - The numerical part of a term doesn't need "*" but can have it: "2x" or "2\*x"
 - Terms can have as many variables as you like (none included): "2", "2x", "2x\*y\*z\*bee" 
@@ -181,22 +181,22 @@ More detailed explanation about how the parser works (keep in mind this is a ver
 > User might signilize number is positive, as follows: <br><br>
 > &nbsp; "2x^+3" will be divided as "2x^+3" and not ("2x^" , "+3") <br>
 > &nbsp; &nbsp; &nbsp; or <br>
-> &nbsp; "2x^(-3)" will be divided as "2x^+3" and not ("2x^(" , "+3)") <br>
+> &nbsp; "2x^(+3)" will be divided as "2x^+3" and not ("2x^(" , "+3)") <br>
 - Parser can detect negative numbers (as mentioned above)
 - It can detect floats (using "."), for example:
 > "2.3x", "x^3.5" <br>
 > **OBS:** If the parser can't intrepet a number it will throw an error
 - A term can have more than one variable, as long as they are divided using "*":
-> "2x*Y", <br>
-> "5x^2*y",
-> "x*y^2", <br>
-> "3.4x^2*y^-1*z", <br>
+> "2x\*y", <br>
+> "5x^2\*y",
+> "x\*y^2", <br>
+> "3.4x^2\*y^-1*z", <br>
 >  and so on
 - The numeric part of a term can be divided using "*" however this is not necessary
 > "2*x" or "2x"
-- Variable are represented by strings, so a variable can have more than a char in its name:
+- Variables are represented by strings, so a variable can have more than a char in its name:
 > "2xy" -> "xy" is the variable <br>
-> "2x*y" -> "x" and "y" are different variable <br>
+> "2x\*y" -> "x" and "y" are different variable <br>
 > "2xy^2" -> "xy" is the variable <br>
 > "2xy*z -> "xy" and "z" are different variables <br>
 - For the exponents parenthesis can be used to better organize the string:
@@ -206,7 +206,7 @@ More detailed explanation about how the parser works (keep in mind this is a ver
 
 **Technical details about the parser:** <br>
 
-As mentioned the parser divided the string using "+"/"-", but before the division it verifies that the string can be divided (see examples above).<br>
+&nbsp; As mentioned the parser divided the string using "+" or "-", but before the division it verifies that the string can be divided (see examples above).<br>
 After the initial division we will have a list of string, these will be the diferent terms of the polynomial. Each of these string will be processed as follows: <br><br>
 &nbsp; First the signal will be extracted, in case there is no signal at the start, "+" will be infered (this happens on the start of the polynomial if user does not specifies it). <br><br>
 &nbsp; Second The number will be extracted, this is done reading the remainder of the string (removing the signal) until the first letter is found.<br>
@@ -256,7 +256,7 @@ Functions used to transform a polynomial back into a string:
 - firstTermToString: Transforms the first term into a string (because it doesn't have "+" at the front)
 - poliToString: Transforms a polynomial into a string. (Uses the functions above)
 
-Many more auxiliary function was used for this project, however due to size it will not be included in the ReadMe. If you wish these can be viewd at the code itself. The code is commented and orfanized (at least tried).<br>
+Many more auxiliary function was used for this project, however due to size it will not be included in the ReadMe. If you wish these can be viewed at the code itself. The code is commented and orfanized (at least tried).<br>
 The main function are a combination of these functions mentioned above:
 - normPoli utilizes: poliToString, sortTerms, removeZeroPoli, poliCreation, sumTermExpos, sumListTerms, removeZeroTerm. (and those functions rely on other functions like the auxiliary functions).
 - addPolis utilizes:normPoli, poliCreation, sumListTerms, poliToString.
@@ -272,7 +272,33 @@ The main function are a combination of these functions mentioned above:
 
 ## Tests
 
-TODO
+>### NORMALIZATION: COMPLEX TESTS
+> <br>
+> 1. "3x^2*y^5.2 -4y^3 -15"<br>
+> 2. "5y^4*x^4*z + y^2*x^3 + 5.5555x^6"<br>
+>
+<br>
+
+>### ADDITION: COMPLEX TESTS
+> <br>
+> 1. "3x^2*y^5.2 -4y^3 -15" + "6.4x^-3 + 3y^3 + 40.65"<br>
+> 2. "4.2x^2*y^2*z -3 +4*z^2" - "2*z^2 - 4x^2*y^2*z +4.6 -3.1"<br> 
+>
+<br>
+
+>### MULTIPLICATION: COMPLEX TESTS
+> <br>
+> 1. "3x^2*y^5.2 -4y^3 -15" * "6.4x^-3 + 3y^3 + 40.65"<br>
+> 2. "4x^3 + 3y -2.2x^2*z" * "-3.5x^3"<br>
+>
+<br>
+
+>### DERIVATION: COMPLEX TESTS
+> <br>
+> 1. "x" "3x^2*y^5.2 -4y^3 -15x^-3"<br>
+> 2. "y" "3x^2*y^5.2 -4y^3 -15x^-3"<br> 
+>
+<br>
 
 ## Requirements
 
