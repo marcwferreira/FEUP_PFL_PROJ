@@ -1,13 +1,17 @@
 import Data.List
 import Data.Char
 
--- DATATYPE DEFINITION
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- DATATYPE DEFINITION --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 data Expo = Expo {var :: String , expoNum :: Float} deriving (Eq, Show)
 data Term = Term {signal :: Char, numeric :: Float, expos :: [Expo]} deriving (Eq, Show)
 type Poli = [Term]
 
--- AUX FUNCTIONS PARSER
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- AUX FUNCTIONS PARSER -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- remove char from string
 removeOccurencesList:: Eq a => a -> [a] -> [a]
@@ -93,7 +97,9 @@ split:: Eq a => a -> [a] -> [[a]]
 split _ [] = []
 split delimiter rcvString = takeWhile (\a -> a /= delimiter) rcvString : split delimiter (dropWhile (\b -> b == delimiter) (dropWhile (\b -> b /= delimiter) rcvString))
 
--- PARSER
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- PARSER ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- Creates the pair variable and exponent for each of the variables (individually)
 expoCreation:: String -> Expo
@@ -110,7 +116,9 @@ termCreation termString = if isSignal (head termString)
 poliCreation:: String -> Poli
 poliCreation stringList = map (termCreation) (smartStringDivider  (removeOccurencesList ' ' stringList))
 
--- AUX FUNCTIONS
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- AUX FUNCTIONS --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- function that compares the exponent of an "expo" to be used in sorting expos
 expoGreaterNum:: Expo -> Expo -> Ordering
@@ -176,17 +184,36 @@ getFirstExpo:: [Expo] -> Expo
 getFirstExpo [] = Expo "null" 0
 getFirstExpo rcvList = head rcvList
 
+-- NOT USED BY NOW -----------------------------------------------------------------------------------------------------------
+
 -- auxiliary funtion to help the sort by length of expos
 termExposLength:: Term -> Term -> Ordering
 termExposLength term1 term2 = if (length (expos term1)) >= (length (expos term2)) then LT else GT
-
 
 -- function to sort terms by length of expos, used after getting terms with same highest exponent
 sortTermsByLength:: Poli -> Poli
 sortTermsByLength [] = []
 sortTermsByLength rcvPoli = sortBy (termExposLength) rcvPoli
-                        
--- COMPLIMENTARY FUNCTIONS
+
+-- END OF NOT USED BY NOW ----------------------------------------------------------------------------------------------------
+
+-- function to return list of expoNum in a list of expos
+getExpoNumList:: [Expo] -> [Float]
+getExpoNumList [] = []
+getExpoNumList expoList = [ (expoNum x) | x<- expoList] 
+
+-- auxiliary function to help sort by total power value
+termsExposPower:: Term -> Term -> Ordering
+termsExposPower term1 term2 = if (foldr (+) 0 (getExpoNumList (expos term1))) >= (foldr (+) 0 (getExpoNumList (expos term2))) then LT else GT
+
+--function to sort terms by the total power (sum of powers)
+sortTermsByPower:: Poli -> Poli
+sortTermsByPower [] = []
+sortTermsByPower rcvPoli = sortBy (termsExposPower) rcvPoli
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                
+-- COMPLIMENTARY FUNCTIONS ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- function to order expos first by letter then by exponent
 sortExpos:: [Expo] -> [Expo]
@@ -202,7 +229,7 @@ sortTermExpos rcvTerm = Term (signal rcvTerm) (numeric rcvTerm) (sortExpos (expo
 -- function to order terms
 sortTerms:: [Term] -> [Term]
 sortTerms [] = []
-sortTerms rcvList = sortTermsByLength (sortBy (termGreaterVar) greaterTermList) ++ sortTerms (dropWhileList isEqual sortedByTerm greaterTermList)
+sortTerms rcvList = sortTermsByPower (sortBy (termGreaterVar) greaterTermList) ++ sortTerms (dropWhileList isEqual sortedByTerm greaterTermList)
                     where sortedByTerm = sortBy (termGreaterExponent) rcvList
                           greaterTermList = takeWhile (\a-> compareExpoNum (getFirstExpo (expos  (head sortedByTerm))) ( getFirstExpo (expos a))) sortedByTerm
 
@@ -253,7 +280,9 @@ multiplyPolis [] _ = []
 multiplyPolis _ [] = []
 multiplyPolis poli1 poli2 = [ (multiplyTerm x y) | x <- poli1, y <- poli2]
 
--- PRINT FUNCTIONS
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- PRINT FUNCTIONS ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- function to join list of strings with divider
 joinStrings:: Char -> [String] -> String
@@ -299,7 +328,9 @@ poliToString:: Poli -> String
 poliToString [] = "0"
 poliToString rcvPoli = firstTermToString (head rcvPoli) ++ " " ++ (joinStrings ' ' (map (termToString) (tail rcvPoli)))
 
--- MAIN FUNCTIONS
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- MAIN FUNCTIONS -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- function to normalize the polynomial
 normPoli:: String -> String

@@ -206,7 +206,7 @@ More detailed explanation about how the parser works (keep in mind this is a ver
 
 **Technical details about the parser:** <br>
 
-As mentioned the parser divided the string using "+'/"-", but before the division it verifies that the string can be divided (see examples above).<br>
+As mentioned the parser divided the string using "+"/"-", but before the division it verifies that the string can be divided (see examples above).<br>
 After the initial division we will have a list of string, these will be the diferent terms of the polynomial. Each of these string will be processed as follows: <br><br>
 &nbsp; First the signal will be extracted, in case there is no signal at the start, "+" will be infered (this happens on the start of the polynomial if user does not specifies it). <br><br>
 &nbsp; Second The number will be extracted, this is done reading the remainder of the string (removing the signal) until the first letter is found.<br>
